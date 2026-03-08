@@ -54,3 +54,33 @@ LUMEN/
 │   └── lumen.test.ts         # QA: Suite de pruebas de integración
 ├── migrations/               # Scripts de despliegue controlado
 └── Anchor.toml               # Configuración del entorno de red
+
+🚀 Despliegue y Validación
+Entorno de Desarrollo
+Para replicar el entorno de producción de LUMEN, asegúrese de tener:
+
+Solana CLI 1.18.x
+
+Anchor CLI 0.30.x
+
+Node.js 20.x
+
+Comandos Críticos
+# Instalar dependencias
+yarn install
+
+# Compilación con optimización de Rust
+anchor build
+
+# Ejecución de la suite de pruebas unitarias y de integración
+anchor test --detach
+
+📊 Benchmarking de Eficiencia
+LUMEN está diseñado para ser "Gas-Neutral". Al utilizar el cierre de cuentas (close = owner), el costo neto de mantener un inventario a largo plazo es prácticamente cero, ya que el depósito de renta se recupera íntegramente al finalizar la venta o retirar el producto.
+
+🛡️ Roadmap & Escalabilidad
+[ ] LUMEN V2: Soporte nativo para Royalties programables.
+
+[ ] Cross-Game: Integración con estándares SPL-Metadata.
+
+[ ] Oracles: Precios dinámicos basados en Pyth Network.
