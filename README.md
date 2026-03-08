@@ -1,106 +1,251 @@
 # 🕯️ LUMEN — Decentralized Storefront on Solana
 
-Un marketplace minimalista, eficiente y totalmente on‑chain para gestionar productos digitales mediante PDAs.
+Un marketplace minimalista y completamente **on-chain** para gestionar productos digitales utilizando **Program Derived Addresses (PDAs)**.
 
 ---
 
-## ✨ Descripción General
-LUMEN es un smart contract construido con Anchor sobre la red Solana, diseñado para ofrecer una infraestructura ligera y segura para administrar inventarios on‑chain. 
+# ✨ Descripción General
 
-Cada producto registrado se almacena como una PDA única, garantizando integridad, soberanía del usuario y eficiencia en costos de renta. El objetivo del proyecto es demostrar cómo un sistema CRUD puede implementarse de forma profesional en Solana, manteniendo buenas prácticas, seguridad y claridad arquitectónica.
+LUMEN es un smart contract desarrollado con Anchor sobre la blockchain de Solana.  
+El proyecto demuestra cómo implementar un sistema **CRUD descentralizado** para administrar inventarios digitales directamente en la red.
 
----
+Cada producto se almacena como una **PDA única**, lo que garantiza:
 
-## 🧩 Características Principales
-
-### 🛒 1. Registro de Productos
-Los usuarios pueden listar artículos con:
-* **Nombre:** Hasta 32 caracteres.
-* **Precio:** Definido en lamports.
-* **Estado de disponibilidad:** (is_available).
-* **Propietario:** Wallet del creador.
-
-Cada producto vive en su propia PDA derivada de la semilla:
-`["item_v1", owner_pubkey, title]`
-
-### 🔄 2. Actualización Segura
-Solo el propietario puede:
-* Cambiar el precio.
-* Modificar la disponibilidad (ej. “En stock” / “Agotado”).
-* La validación se realiza mediante `has_one = owner` y seeds verificadas directamente en el contrato.
-
-### 🗑️ 3. Eliminación con Recuperación de Renta
-Al eliminar un producto:
-* La cuenta se cierra permanentemente.
-* El depósito de renta se devuelve automáticamente al propietario.
-* Esto convierte a LUMEN en un sistema **rent‑neutral**, ideal para inventarios dinámicos.
+- Integridad de los datos
+- Propiedad verificable
+- Direcciones determinísticas
+- Eficiencia en costos de almacenamiento
 
 ---
 
-## 🏛️ Arquitectura del Programa
-LUMEN está construido bajo una estructura modular y clara:
+# 🧩 Características Principales
 
-### 📦 Cuentas
-* **StoreItem:** Modelo principal del producto. Incluye owner, título, precio, disponibilidad y bump.
+## 🛒 Registro de Productos
 
-### 🧭 Contextos
-* **AddItem:** Inicializa la PDA del producto.
-* **UpdateItem:** Valida propiedad y actualiza campos.
-* **DeleteItem:** Cierra la cuenta y libera renta.
+Los usuarios pueden registrar artículos con:
 
-### 🧱 Diseño Basado en PDAs
-El uso de PDAs garantiza direcciones determinísticas, seguridad sin necesidad de almacenar índices globales y escalabilidad total.
+- Nombre (máximo 32 caracteres)
+- Precio en lamports
+- Estado de disponibilidad
+- Propietario (wallet creador)
 
----
+Cada producto se almacena en una PDA derivada de:
 
-## 🔐 Seguridad y Buenas Prácticas
-* **Validación de Propietario:** Solo el creador del producto puede modificarlo o eliminarlo.
-* **Validación de Entradas:** Títulos limitados (1-32 caracteres) y precios siempre mayores a 0.
-* **Gestión de Seeds:** Evita colisiones y asegura la integridad de los datos.
-* **Cierre Seguro:** Uso de `close = owner` para garantizar el retorno de fondos.
+```rust
+["item_v1", owner_pubkey, title]
+```
 
 ---
 
-## ⚡ Eficiencia y Costos
-LUMEN no mantiene listas globales; cada producto es independiente. El costo de almacenamiento se recupera al eliminarlo, lo que lo hace ideal para marketplaces con alta rotación de inventario.
+## 🔄 Actualización Segura
+
+Solo el propietario del producto puede modificar sus datos.
+
+Las operaciones permitidas incluyen:
+
+- Cambiar el precio
+- Modificar la disponibilidad
+
+El contrato valida automáticamente la propiedad mediante:
+
+```rust
+has_one = owner
+```
 
 ---
 
-## 🧪 Pruebas y Calidad
-El proyecto incluye una suite de pruebas (TypeScript + Mocha/Chai) que valida:
-* Creación y persistencia de productos.
-* Actualización de datos y restricciones de seguridad.
-* Eliminación y recuperación total de renta.
+## 🗑️ Eliminación con Recuperación de Renta
+
+Cuando un producto se elimina:
+
+- La cuenta se cierra
+- La renta almacenada se devuelve al propietario
+- Se libera almacenamiento en la red
+
+Esto permite que el sistema sea **rent-neutral**.
 
 ---
 
-## 🚀 Cómo Ejecutarlo Localmente
+# 🏛️ Arquitectura del Programa
 
-### Requisitos
-* Solana CLI 1.18.x
-* Anchor 0.30.x
-* Node.js 20.x
-* Yarn
+## 📦 Modelo de Datos
 
-### Comandos Principales
+```rust
+StoreItem {
+    owner: Pubkey,
+    title: String,
+    price: u64,
+    is_available: bool,
+    bump: u8
+}
+```
+
+Este modelo representa un producto dentro del marketplace.
+
+---
+
+## 🧭 Contextos
+
+El programa utiliza tres contextos principales:
+
+```rust
+AddItem
+UpdateItem
+DeleteItem
+```
+
+### AddItem
+Inicializa una nueva PDA para el producto.
+
+### UpdateItem
+Permite modificar el precio y disponibilidad del producto.
+
+### DeleteItem
+Cierra la cuenta y devuelve la renta al propietario.
+
+---
+
+# 🧱 Diseño Basado en PDAs
+
+Las Program Derived Addresses permiten:
+
+- Direcciones determinísticas
+- Seguridad sin claves privadas
+- Eliminación de índices globales
+- Escalabilidad
+
+La PDA de cada producto se deriva de:
+
+```rust
+["item_v1", owner_pubkey, title]
+```
+
+---
+
+# 🔐 Seguridad y Buenas Prácticas
+
+El contrato implementa varias validaciones:
+
+### Validación de Propietario
+
+Solo el creador del producto puede modificarlo o eliminarlo.
+
+### Validación de Entradas
+
+```rust
+title length: 1 - 32 characters
+price > 0
+```
+
+### Gestión de Seeds
+
+Las seeds garantizan integridad y evitan colisiones de direcciones.
+
+### Cierre Seguro de Cuentas
+
+```rust
+close = owner
+```
+
+Esto devuelve automáticamente la renta al propietario.
+
+---
+
+# ⚡ Eficiencia y Costos
+
+LUMEN no utiliza listas globales de productos.
+
+Cada producto es independiente y vive en su propia cuenta PDA.
+
+Ventajas:
+
+- menor uso de almacenamiento
+- menor costo computacional
+- recuperación de renta al eliminar productos
+
+---
+
+# 🧪 Pruebas
+
+El proyecto incluye pruebas automatizadas con:
+
+```
+TypeScript
+Mocha
+Chai
+```
+
+Las pruebas verifican:
+
+- Creación de productos
+- Persistencia de datos
+- Actualización de precio
+- Validación de permisos
+- Eliminación y recuperación de renta
+
+---
+
+# 🚀 Cómo Ejecutarlo Localmente
+
+## Requisitos
+
+```
+Solana CLI 1.18.x
+Anchor 0.30.x
+Node.js 20.x
+Yarn
+```
+
+---
+
+## Instalación
+
 ```bash
-# 1. Instalar dependencias
 yarn install
+```
 
-# 2. Compilar el programa
+---
+
+## Compilar el programa
+
+```bash
 anchor build
+```
 
-# 3. Ejecutar pruebas de integración
+---
+
+## Ejecutar pruebas
+
+```bash
 anchor test
+```
 
-# Estructura del Repositorio
+---
+
+# 📂 Estructura del Repositorio
+
+```
 LUMEN/
 ├── programs/
 │   └── lumen/
 │       └── src/
-│           ├── lib.rs     # Lógica principal e instrucciones
-│           ├── state.rs   # Definición de datos del juego
-│           └── errors.rs  # Mensajes de error personalizados
-├── tests/                 # Suite de pruebas en TypeScript (Mocha/Chai)
-├── migrations/            # Scripts de despliegue
-└── Anchor.toml            # Configuración del framework
+│           └── lib.rs
+├── tests/
+│   └── anchor.test.ts
+├── migrations/
+│   └── deploy.ts
+├── Anchor.toml
+└── README.md
+```
+
+---
+
+# 🎯 Objetivo del Proyecto
+
+LUMEN demuestra cómo construir un smart contract limpio, seguro y escalable en Solana utilizando Anchor.
+
+El proyecto sirve como:
+
+- ejemplo educativo
+- base para marketplaces descentralizados
+- demostración de uso de PDAs en sistemas CRUD
