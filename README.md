@@ -93,19 +93,6 @@ anchor build
 # 3. Ejecutar pruebas de integración
 anchor test
 
-### Comandos Críticos y Estructura
-Para instalar y probar la integridad del contrato, usa estos comandos:
-
-```bash
-# 1. Instalar dependencias
-yarn install
-
-# 2. Compilar el programa
-anchor build
-
-# 3. Ejecutar pruebas de integración
-anchor test
-
 # Estructura del Repositorio
 LUMEN/
 ├── programs/
