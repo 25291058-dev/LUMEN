@@ -1,0 +1,156 @@
+# Reporte Técnico: LUMEN
+
+## Gestión de Productos y PDAs
+El contrato inteligente **LUMEN** utiliza **Program Derived Addresses (PDAs)** para almacenar productos de manera determinística dentro de la blockchain de Solana.
+
+Cada producto se guarda en una cuenta independiente que se deriva utilizando seeds específicas. Esto permite garantizar que cada producto tenga una dirección única vinculada directamente a su propietario.
+
+### Estructura de la PDA
+La dirección de cada producto se deriva utilizando las siguientes seeds:
+
+- La semilla estática: `"item_v1"`
+- La llave pública del propietario (`owner`)
+- El título del producto (`title`)
+
+Ejemplo de derivación:
+
+```rust
+["item_v1", owner_pubkey, title]
+```
+
+Este enfoque garantiza que no existan colisiones entre productos y permite identificar fácilmente cada registro dentro del programa.
+
+---
+
+## Modelo de Datos
+
+Cada producto se representa mediante la estructura `StoreItem`, que almacena la información esencial del artículo registrado.
+
+```rust
+StoreItem {
+    owner: Pubkey,
+    title: String,
+    price: u64,
+    is_available: bool,
+    bump: u8
+}
+```
+
+### Descripción de Campos
+
+- **owner**: Dirección pública del usuario que registró el producto.
+- **title**: Nombre del producto.
+- **price**: Precio del producto expresado en lamports.
+- **is_available**: Estado de disponibilidad del producto.
+- **bump**: Valor utilizado para derivar correctamente la PDA.
+
+---
+
+## Gestión de Espacio
+
+El espacio de la cuenta fue calculado considerando todos los campos almacenados dentro de `StoreItem`.
+
+El cálculo incluye:
+
+- **Discriminador de Anchor**: 8 bytes
+- **Llave pública del propietario**: 32 bytes
+- **Título del producto**: hasta 32 caracteres
+- **Precio**: 8 bytes
+- **Disponibilidad**: 1 byte
+- **Bump de PDA**: 1 byte
+
+Esto permite que cada cuenta tenga suficiente espacio para almacenar los datos sin desperdiciar memoria dentro de la red.
+
+---
+
+## Validaciones de Seguridad
+
+El contrato implementa diversas validaciones para garantizar la integridad del sistema.
+
+### Validación de Propietario
+
+Solo el propietario de un producto puede modificarlo o eliminarlo.  
+Esto se valida mediante la restricción:
+
+```rust
+has_one = owner
+```
+
+---
+
+### Validación de Datos
+
+El sistema incluye restricciones para evitar datos inválidos:
+
+- El título del producto debe tener entre **1 y 32 caracteres**.
+- El precio debe ser **mayor a 0**.
+
+Estas validaciones previenen errores y protegen la integridad del almacenamiento.
+
+---
+
+## Manejo de Cuentas
+
+El programa define tres instrucciones principales para administrar productos:
+
+### Crear Producto
+
+Permite registrar un nuevo producto dentro del sistema.
+
+Durante esta operación:
+
+- Se genera la PDA del producto.
+- Se inicializa la cuenta.
+- Se almacenan los datos proporcionados por el usuario.
+
+---
+
+### Actualizar Producto
+
+Permite modificar los datos del producto.
+
+Los campos que pueden modificarse son:
+
+- Precio
+- Estado de disponibilidad
+
+La operación solo puede ser ejecutada por el propietario.
+
+---
+
+### Eliminar Producto
+
+Permite eliminar un producto del sistema.
+
+Durante esta operación:
+
+- La cuenta del producto se cierra.
+- La renta almacenada se devuelve al propietario.
+- Se libera almacenamiento dentro de la blockchain.
+
+La operación se ejecuta utilizando:
+
+```rust
+close = owner
+```
+
+---
+
+## Eficiencia del Sistema
+
+El diseño de **LUMEN** evita el uso de listas globales de productos.  
+Cada producto se almacena en su propia cuenta independiente.
+
+Este enfoque permite:
+
+- Mayor escalabilidad
+- Menor consumo de recursos
+- Recuperación automática de renta al eliminar productos
+
+---
+
+## Conclusión
+
+El contrato inteligente **LUMEN** demuestra cómo implementar un sistema CRUD descentralizado utilizando las herramientas del ecosistema de Solana.
+
+Mediante el uso de PDAs, validaciones de seguridad y gestión eficiente del espacio, el sistema ofrece una base sólida para el desarrollo de aplicaciones descentralizadas enfocadas en la administración de productos digitales.
